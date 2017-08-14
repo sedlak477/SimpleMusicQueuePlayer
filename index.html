@@ -52,7 +52,7 @@
     <script>
         var module = angular.module("simplePlayer", []);
 
-        app.factory('socket', function ($rootScope) {
+        module.factory('socket', function ($rootScope) {
             var socket = io.connect();
             return {
                 on: function (eventName, callback) {
