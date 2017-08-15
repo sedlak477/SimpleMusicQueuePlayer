@@ -15,7 +15,6 @@
     "fluent-ffmpeg": "^2.1.2",
     "nconf": "^0.8.4",
     "socket.io": "^2.0.3",
-    "speaker": "^0.3.0",
     "ytdl-core": "^0.15.2"
   }
 }

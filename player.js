@@ -141,7 +141,7 @@ class Player extends EventEmitter {
                 sampleRate: 48000
             });
             // Start next song
-            this._streams.speaker.on("close", () => {
+            this._streams.speaker.speaker.on("close", () => {
                 this._playing = false;
                 this._corked = false;
                 this.currentSong = null;
