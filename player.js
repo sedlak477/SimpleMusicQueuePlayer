@@ -1,5 +1,5 @@
 const ytdl = require("ytdl-core");
-const Speaker = require("speaker");
+const Speaker = require("audio-speaker/stream");
 const ffmpeg = require("fluent-ffmpeg");
 const { EventEmitter } = require("events");
 
@@ -137,7 +137,7 @@ class Player extends EventEmitter {
         } else if (this.queue.length > 0 && !this.playing) {
             let song = this.queue.pop();
             this.emit("queueChanged", this.queue);
-            this._streams.speaker = new Speaker({
+            this._streams.speaker = Speaker({
                 sampleRate: 48000
             });
             // Start next song
