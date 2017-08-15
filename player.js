@@ -65,6 +65,7 @@ class Player extends EventEmitter {
      * @param {boolean} value
      */
     set playing(value) {
+        if (value === this._playing) return;
         if (value)
             this._start();
         else if (!this._corked) {

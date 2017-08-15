@@ -52,8 +52,7 @@ app.post("/addSong", (req, res) => {
     if (req.body.url) {
         player.addSong(req.body.url, queue => {
             res.json({ result: true });
-            if (!player.playing)
-                player.start();
+            player.playing = true;
         });
     } else
         res.json({ result: false, message: "No URL" });
