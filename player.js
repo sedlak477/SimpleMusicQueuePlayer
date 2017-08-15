@@ -65,18 +65,15 @@ class Player extends EventEmitter {
      * @param {boolean} value
      */
     set playing(value) {
-        this._playing = value;
-        if (value) {
-            this.start();
-            console.log("Player started");
-            this.emit("start", this.currentSong);
-        } else {
-            if (this._corked) {
-                this._streams.speaker.cork();
-                console.log("Player paused");
-                this.emit("pause");
-            }
+        if (value)
+            this._start();
+        else if (!this._corked) {
+            this._streams.speaker.cork();
+            this._corked = true;
+            console.log("Player paused");
+            this.emit("pause");
         }
+        this._playing = value;
     }
 
     /**
@@ -130,27 +127,32 @@ class Player extends EventEmitter {
 
     /**
      * Start the player
+     * @private
      */
-    start() {
+    _start() {
         if (this._corked) {
             this._streams.speaker.uncork();
+            this._corked = false;
         } else if (this.queue.length > 0 && !this.playing) {
             let song = this.queue.pop();
             this.emit("queueChanged", this.queue);
-            this._streams.speaker = new Speaker();
+            this._streams.speaker = new Speaker({
+                sampleRate: 48000
+            });
             // Start next song
             this._streams.speaker.on("close", () => {
-                this.playing = false;
+                this._playing = false;
+                this._corked = false;
                 this.currentSong = null;
-                this.emit("end");
-                this.start();
+                this._start();
             });
+            this._streams.speaker.on("error", console.error);
             // Get youtube stream; use ffmpeg to convert to wav format; pipe into speakers
             this._streams.youtube = ytdl(song.url, { quality: "lowest" });
-            this._streams.ffmpeg = ffmpeg(this._streams.youtube).format("wav").stream();
+            this._streams.ffmpeg = ffmpeg(this._streams.youtube).format("wav").outputOption("-ar 48000").on("error", console.error).stream();
             this._streams.ffmpeg.pipe(this._streams.speaker);
             this._playing = true;
-            this._currentSong = song;
+            this.currentSong = song;
             console.log("Playing: " + song.name);
             this.emit("start", song);
         }

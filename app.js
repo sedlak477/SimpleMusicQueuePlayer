@@ -23,8 +23,10 @@ let player = new Player();
 // Express routing
 
 app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+    res.sendFile(path.join(__dirname, "www/index.html"));
 });
+
+app.use("/", express.static("www"));
 
 app.get("/queue", (req, res) => {
     /*
@@ -48,14 +50,10 @@ app.get("/currentSong", (req, res) => {
 
 app.post("/addSong", (req, res) => {
     if (req.body.url) {
-        player.addSong(req.body.url, err => {
-            if (err)
-                res.json({ result: false, message: err })
-            else {
-                res.json({ result: true });
-                if (!player.playing)
-                    player.start();
-            }
+        player.addSong(req.body.url, queue => {
+            res.json({ result: true });
+            if (!player.playing)
+                player.start();
         });
     } else
         res.json({ result: false, message: "No URL" });
@@ -63,7 +61,7 @@ app.post("/addSong", (req, res) => {
 
 app.post("/start", (req, res) => {
     if (!player.playing) {
-        player.start();
+        player.playing = true;
         res.json({ result: true });
     } else
         res.json({ result: false, message: "Already playing" });
@@ -71,7 +69,7 @@ app.post("/start", (req, res) => {
 
 app.post("/stop", (req, res) => {
     if (player.playing) {
-        player.stop();
+        player.playing = false
         res.json({ result: true });
     } else
         res.json({ result: false, message: "Currently not playing" });
@@ -79,7 +77,7 @@ app.post("/stop", (req, res) => {
 
 app.post("/pause", (req, res) => {
     if (player.playing) {
-        player.pause();
+        player.playing = false;
         res.json({ result: true });
     } else
         res.json({ result: false, message: "Currently not playing" });

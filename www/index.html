@@ -1,0 +1,69 @@
+<html>
+
+<head>
+    <title>Simple Music Queue Player</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" crossorigin="anonymous">
+    <script src="https://use.fontawesome.com/08ccad05de.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body ng-app="simplePlayer" ng-controller="index">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <a class="navbar-brand" href="#">Simple Music Queue Player</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+            aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <div class="btn-group btn-group-lg" role="group">
+                <button type="button" class="btn btn-success" ng-click="startPlayer()"><i class="fa fa-play" aria-hidden="true"></i></button>
+                <button type="button" class="btn btn-danger" ng-click="pausePlayer()"><i class="fa fa-pause" aria-hidden="true"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <div class="alert alert-primary mt-3" role="alert">
+                    <h4>Currently playing: <a target="_blank" ng-href="{{ currentSong.url }}">{{ currentSong.name || song.url }}</a></h4>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-8">
+                <div class="jumbotron">
+                    <h1 class="display-3">Add a song</h1>
+                    <hr>
+                    <form ng-submit="addSong()">
+                        <div class="form-row align-items-center">
+                            <div class="col-auto">
+                                <label for="songUrl">Song URL</label>
+                            </div>
+                            <div class="col">
+                                <input id="songUrl" type="text" ng-model="songUrl" class="form-control">
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-primary">Add</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col">
+                <ul class="list-group">
+                    <li class="list-group-item list-group-item-action" ng-repeat="song in playlist">
+                        <a target="_blank" ng-href="{{ song.url }}">{{ song.name || song.url }}</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+    <script src="index.js"></script>
+</body>
+
+</html>
