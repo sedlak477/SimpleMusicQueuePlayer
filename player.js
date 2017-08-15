@@ -1,5 +1,5 @@
 const ytdl = require("ytdl-core");
-const Speaker = require("audio-speaker/stream");
+const Speaker = require("speaker");
 const ffmpeg = require("fluent-ffmpeg");
 const { EventEmitter } = require("events");
 
@@ -137,15 +137,15 @@ class Player extends EventEmitter {
         } else if (this.queue.length > 0 && !this.playing) {
             let song = this.queue.pop();
             this.emit("queueChanged", this.queue);
-            this._streams.speaker = Speaker({
+            this._streams.speaker = new Speaker({
                 sampleRate: 48000
             });
             // Start next song
-            this._streams.speaker.speaker.on("close", () => {
+            this._streams.speaker.on("close", () => {
                 this._playing = false;
                 this._corked = false;
                 this.currentSong = null;
-                this._start();
+                this.playing = true;
             });
             this._streams.speaker.on("error", console.error);
             // Get youtube stream; use ffmpeg to convert to wav format; pipe into speakers

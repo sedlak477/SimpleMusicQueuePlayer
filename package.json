@@ -9,12 +9,12 @@
   "author": "sedlak477",
   "license": "MIT",
   "dependencies": {
-    "audio-speaker": "^1.5.0",
     "body-parser": "^1.17.2",
     "express": "^4.15.4",
     "fluent-ffmpeg": "^2.1.2",
     "nconf": "^0.8.4",
     "socket.io": "^2.0.3",
+    "speaker": "^0.3.0",
     "ytdl-core": "^0.15.2"
   }
 }
