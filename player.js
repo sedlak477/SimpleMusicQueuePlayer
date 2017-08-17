@@ -119,6 +119,7 @@ class Player extends EventEmitter {
         if (true || ytdl.validateLink(url)) {  // Worst fix in history
             this.once("queueChanged", callback);
             ytdl.getInfo(url).then(info => {
+                console.log(info);
                 this.queue.push({ name: info.title, url: url });
                 console.log("Song '" + info.title + "' added to queue");
                 this.emit("queueChanged", this.queue);
@@ -140,22 +141,30 @@ class Player extends EventEmitter {
             this._streams.speaker = new Speaker();
             // Start next song
             this._streams.speaker.on("close", () => {
-                console.log("Finished song: " + this.currentSong);
+                console.log("Finished song: " + this.currentSong.name);
                 this._playing = false;
                 this._corked = false;
                 this.currentSong = null;
                 this.playing = true;
             });
             this._streams.speaker.on("error", console.error);
+
+            // Debugging
+
+            this._streams.speaker.on("drain", () => console.log("drain - " + Date.now()));
+            this._streams.speaker.on("finish", data => console.log("finish: " + data));
+
+            // END Debugging
+
             // Get youtube stream; use ffmpeg to convert to wav format; pipe into speakers
             this._streams.youtube = ytdl(song.url, { quality: "lowest" });
+            // -ar 44100 sets output sample rate to 44100 Hz to match Speaker sample rate
             this._streams.ffmpeg = ffmpeg(this._streams.youtube).format("wav").outputOption("-ar 44100").on("error", console.error).stream();
             this._streams.ffmpeg.pipe(this._streams.speaker, { end: true });
             this._playing = true;
             this.currentSong = song;
             console.log("Playing: " + song.name);
             this.emit("start", song);
-            console.log(this._streams.speaker);
         }
     }
 }
