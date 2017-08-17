@@ -137,11 +137,10 @@ class Player extends EventEmitter {
         } else if (this.queue.length > 0 && !this.playing) {
             let song = this.queue.pop();
             this.emit("queueChanged", this.queue);
-            this._streams.speaker = new Speaker({
-                sampleRate: 48000
-            });
+            this._streams.speaker = new Speaker();
             // Start next song
             this._streams.speaker.on("close", () => {
+                console.log("Finished song: " + this.currentSong);
                 this._playing = false;
                 this._corked = false;
                 this.currentSong = null;
@@ -150,8 +149,8 @@ class Player extends EventEmitter {
             this._streams.speaker.on("error", console.error);
             // Get youtube stream; use ffmpeg to convert to wav format; pipe into speakers
             this._streams.youtube = ytdl(song.url, { quality: "lowest" });
-            this._streams.ffmpeg = ffmpeg(this._streams.youtube).format("wav").outputOption("-ar 48000").on("error", console.error).stream();
-            this._streams.ffmpeg.pipe(this._streams.speaker);
+            this._streams.ffmpeg = ffmpeg(this._streams.youtube).format("wav").outputOption("-ar 44100").on("error", console.error).stream();
+            this._streams.ffmpeg.pipe(this._streams.speaker, { end: true });
             this._playing = true;
             this.currentSong = song;
             console.log("Playing: " + song.name);
