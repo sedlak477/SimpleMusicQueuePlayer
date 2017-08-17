@@ -155,6 +155,7 @@ class Player extends EventEmitter {
             this.currentSong = song;
             console.log("Playing: " + song.name);
             this.emit("start", song);
+            console.log(this._streams.speaker);
         }
     }
 }
