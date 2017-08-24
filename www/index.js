@@ -44,22 +44,29 @@ module.controller("index", function ($scope, $http, socket) {
         });
     };
 
-    $scope.stopPlayer = function (response) {
-        $http.post("/stop", {}, function () {
+    $scope.stopPlayer = function () {
+        $http.post("/stop", {}, function (response) {
             if (!response.data.result)
                 console.warn(response.data.message);
         });
     };
 
-    $scope.pausePlayer = function (response) {
-        $http.post("/pause", {}, function () {
+    $scope.pausePlayer = function () {
+        $http.post("/pause", {}, function (response) {
             if (!response.data.result)
                 console.warn(response.data.message);
         });
     };
 
-    $scope.nextSong = function (response) {
-        $http.post("/next", {}, function () {
+    $scope.nextSong = function () {
+        $http.post("/next", {}, function (response) {
+            if (!response.data.result)
+                console.warn(response.data.message);
+        });
+    };
+
+    $scope.removePlaylistEntry = function (index) {
+        $http.delete("/queue/"+index).then(function (response) {
             if (!response.data.result)
                 console.warn(response.data.message);
         });

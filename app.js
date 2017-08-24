@@ -95,6 +95,14 @@ app.post("/setVolume", (req, res) => {
         res.json({ result: false, message: "No volume" });
 });
 
+app.delete("/queue/:itemIndex", (req, res) => {
+    if (player.queue.length > req.params.itemIndex) {
+        player.removeFromQueue(req.params.itemIndex);
+        res.json({ result: true });
+    } else
+        res.json({ result: false, message: "Index out of range: " + req.params.itemIndex });
+});
+
 // Socket.IO events
 
 player.on("queueChanged", queue => io.emit("queueChanged", queue));

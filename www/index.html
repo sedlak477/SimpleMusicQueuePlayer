@@ -27,7 +27,9 @@
         <div class="row">
             <div class="col">
                 <div class="alert alert-primary mt-3 clearfix" role="alert">
-                    <h4 class="float-left">Currently playing: <a target="_blank" ng-href="{{ currentSong.url }}">{{ currentSong.name || song.url }}</a></h4>
+                    <h4 class="float-left">
+                        Currently playing: <a target="_blank" ng-href="{{ currentSong.url }}">{{ currentSong.name || song.url }}</a>
+                    </h4>
                     <div class="btn-group btn-group-lg float-right" role="group">
                         <button type="button" class="btn btn-success" ng-click="startPlayer()"><i class="fa fa-play" aria-hidden="true"></i></button>
                         <button type="button" class="btn btn-warning" ng-click="pausePlayer()"><i class="fa fa-pause" aria-hidden="true"></i></button>
@@ -60,13 +62,15 @@
             <div class="col">
                 <ul class="list-group">
                     <li class="list-group-item"><h4><i class="fa fa-bars" aria-hidden="true"></i> Playlist</h4></li>
-                    <li class="list-group-item list-group-item-action" ng-repeat="song in playlist">
+                    <li class="list-group-item list-group-item-action clearfix" ng-repeat="song in playlist">
                         <a target="_blank" ng-href="{{ song.url }}">{{ song.name || song.url }}</a>
+                        <a href="" ng-click="removePlaylistEntry($index)"><span class="float-right" aria-hidden="true">&times;</span></a>
                     </li>
                 </ul>
             </div>
         </div>
     </div>
+    <a ng-show="currentSong.pictureUrl" ng-href="{{ currentSong.pictureUrl }}" target="_blank" class="btn btn-light bottom-right m-3">Thumbnail</a>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
     <script src="index.js"></script>

@@ -146,7 +146,7 @@ class Player extends EventEmitter {
             // -ar 44100 sets output sample rate to 44100 Hz to match Speaker sample rate
             this._streams.ffmpeg = ffmpeg(this._streams.youtube).format("mp3").on("error", console.error).stream();
             this._streams.ffmpeg.pipe(this._streams.lame);
-            
+
             this._playing = true;
             this.currentSong = song;
             console.log("Playing: " + song.name);
@@ -172,21 +172,25 @@ class Player extends EventEmitter {
      */
     stop() {
         if (this.playing) {
-            if (this._streams.speaker) {
-                this._streams.speaker.destroy();
-                this._streams.speaker = null;
+            if (this._streams.youtube) {
+                this._streams.youtube.destroy();
+                this._streams.youtube = null;
             }
             if (this._streams.ffmpeg) {
                 this._streams.ffmpeg.destroy();
                 this._streams.ffmpeg = null;
             }
-            if (this._streams.youtube) {
-                this._streams.youtube.destroy();
-                this._streams.youtube = null;
+            if (this._streams.lame) {
+                this._streams.lame = null;
+            }
+            if (this._streams.speaker) {
+                this._streams.speaker.destroy();
+                this._streams.speaker = null;
             }
             this._playing = false;
             this._corked = false;
             this.currentSong = null;
+            this.emit("stop");
         }
     }
 
@@ -199,8 +203,18 @@ class Player extends EventEmitter {
             this.start();
         } else {
             this.queue.shift();
-            this.emit("queueChanged");
+            this.emit("queueChanged", this.queue);
         }
+    }
+
+    /**
+     * Remove an item from the playback queue
+     * @param {number} index Index of item which is to be removed
+     */
+    removeFromQueue(index) {
+        let elem = this.queue.splice(index, 1)[0];
+        this.emit("queueChanged", this.queue);
+        console.log("Song '" + elem.name + "' removed from queue");
     }
 }
 
