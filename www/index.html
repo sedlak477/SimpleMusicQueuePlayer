@@ -7,7 +7,9 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 
-<body ng-app="simplePlayer" ng-controller="index">
+<body ng-app="simplePlayer" ng-controller="index" ng-class="{ 'body-img': currentSong.pictureUrl }">
+
+    <img ng-src="{{ currentSong.pictureUrl }}" class="background-image">
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
         <a class="navbar-brand" href="#">Simple Music Queue Player</a>
@@ -17,18 +19,21 @@
         </button>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <div class="btn-group btn-group-lg" role="group">
-                <button type="button" class="btn btn-success" ng-click="startPlayer()"><i class="fa fa-play" aria-hidden="true"></i></button>
-                <button type="button" class="btn btn-danger" ng-click="pausePlayer()"><i class="fa fa-pause" aria-hidden="true"></i></button>
-            </div>
+            
         </div>
     </nav>
 
     <div class="container">
         <div class="row">
             <div class="col">
-                <div class="alert alert-primary mt-3" role="alert">
-                    <h4>Currently playing: <a target="_blank" ng-href="{{ currentSong.url }}">{{ currentSong.name || song.url }}</a></h4>
+                <div class="alert alert-primary mt-3 clearfix" role="alert">
+                    <h4 class="float-left">Currently playing: <a target="_blank" ng-href="{{ currentSong.url }}">{{ currentSong.name || song.url }}</a></h4>
+                    <div class="btn-group btn-group-lg float-right" role="group">
+                        <button type="button" class="btn btn-success" ng-click="startPlayer()"><i class="fa fa-play" aria-hidden="true"></i></button>
+                        <button type="button" class="btn btn-warning" ng-click="pausePlayer()"><i class="fa fa-pause" aria-hidden="true"></i></button>
+                        <button type="button" class="btn btn-danger" ng-click="stopPlayer()"><i class="fa fa-stop" aria-hidden="true"></i></button>
+                        <button type="button" class="btn btn-primary" ng-click="nextSong()"><i class="fa fa-step-forward" aria-hidden="true"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -54,6 +59,7 @@
             </div>
             <div class="col">
                 <ul class="list-group">
+                    <li class="list-group-item"><h4><i class="fa fa-bars" aria-hidden="true"></i> Playlist</h4></li>
                     <li class="list-group-item list-group-item-action" ng-repeat="song in playlist">
                         <a target="_blank" ng-href="{{ song.url }}">{{ song.name || song.url }}</a>
                     </li>

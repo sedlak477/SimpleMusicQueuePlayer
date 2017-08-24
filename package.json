@@ -12,6 +12,7 @@
     "body-parser": "^1.17.2",
     "express": "^4.15.4",
     "fluent-ffmpeg": "^2.1.2",
+    "lame": "^1.2.4",
     "nconf": "^0.8.4",
     "socket.io": "^2.0.3",
     "speaker": "^0.3.0",

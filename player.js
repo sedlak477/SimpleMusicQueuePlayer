@@ -2,6 +2,7 @@ const ytdl = require("ytdl-core");
 const Speaker = require("speaker");
 const ffmpeg = require("fluent-ffmpeg");
 const { EventEmitter } = require("events");
+const lame = require("lame");
 
 class Player extends EventEmitter {
 
@@ -61,23 +62,6 @@ class Player extends EventEmitter {
     }
 
     /**
-     * Set playing state of player
-     * @param {boolean} value
-     */
-    set playing(value) {
-        if (value === this._playing) return;
-        if (value)
-            this._start();
-        else if (!this._corked) {
-            this._streams.speaker.cork();
-            this._corked = true;
-            console.log("Player paused");
-            this.emit("pause");
-        }
-        this._playing = value;
-    }
-
-    /**
      * Current song
      * @returns {object} Object containing url and name 
      */
@@ -119,8 +103,7 @@ class Player extends EventEmitter {
         if (true || ytdl.validateLink(url)) {  // Worst fix in history
             this.once("queueChanged", callback);
             ytdl.getInfo(url).then(info => {
-                console.log(info);
-                this.queue.push({ name: info.title, url: url });
+                this.queue.push({ name: info.title, url: url, pictureUrl: info.iurlmaxres, description: info.description });
                 console.log("Song '" + info.title + "' added to queue");
                 this.emit("queueChanged", this.queue);
             });
@@ -131,40 +114,92 @@ class Player extends EventEmitter {
      * Start the player
      * @private
      */
-    _start() {
+    start() {
         if (this._corked) {
             this._streams.speaker.uncork();
             this._corked = false;
+            this._playing = true;
+            console.log("Player resumed");
+            this.emit("resume");
         } else if (this.queue.length > 0 && !this.playing) {
             let song = this.queue.pop();
             this.emit("queueChanged", this.queue);
+
             this._streams.speaker = new Speaker();
             // Start next song
             this._streams.speaker.on("close", () => {
-                console.log("Finished song: " + this.currentSong.name);
-                this._playing = false;
-                this._corked = false;
-                this.currentSong = null;
-                this.playing = true;
+                if (this.playing) {
+                    console.log("Finished song: " + this.currentSong.name);
+                    this.emit("finished", this.currentSong);
+                    this.next();
+                }
             });
             this._streams.speaker.on("error", console.error);
 
-            // Debugging
-
-            this._streams.speaker.on("drain", () => console.log("drain - " + Date.now()));
-            this._streams.speaker.on("finish", data => console.log("finish: " + data));
-
-            // END Debugging
+            this._streams.lame = new lame.Decoder();
+            this._streams.lame.on("error", console.error);
+            this._streams.lame.pipe(this._streams.speaker);
 
             // Get youtube stream; use ffmpeg to convert to wav format; pipe into speakers
             this._streams.youtube = ytdl(song.url, { quality: "lowest" });
+
             // -ar 44100 sets output sample rate to 44100 Hz to match Speaker sample rate
-            this._streams.ffmpeg = ffmpeg(this._streams.youtube).format("wav").outputOption("-ar 44100").on("error", console.error).stream();
-            this._streams.ffmpeg.pipe(this._streams.speaker, { end: true });
+            this._streams.ffmpeg = ffmpeg(this._streams.youtube).format("mp3").on("error", console.error).stream();
+            this._streams.ffmpeg.pipe(this._streams.lame);
+            
             this._playing = true;
             this.currentSong = song;
             console.log("Playing: " + song.name);
             this.emit("start", song);
+        }
+    }
+
+    /**
+     * Pause the playback
+     */
+    pause() {
+        if (!this._corked) {
+            this._streams.speaker.cork();
+            this._corked = true;
+            this._playing = false;
+            console.log("Player paused");
+            this.emit("pause");
+        }
+    }
+
+    /**
+     * Stop playback
+     */
+    stop() {
+        if (this.playing) {
+            if (this._streams.speaker) {
+                this._streams.speaker.destroy();
+                this._streams.speaker = null;
+            }
+            if (this._streams.ffmpeg) {
+                this._streams.ffmpeg.destroy();
+                this._streams.ffmpeg = null;
+            }
+            if (this._streams.youtube) {
+                this._streams.youtube.destroy();
+                this._streams.youtube = null;
+            }
+            this._playing = false;
+            this._corked = false;
+            this.currentSong = null;
+        }
+    }
+
+    /**
+     * Play next song
+     */
+    next() {
+        if (this.playing) {
+            this.stop();
+            this.start();
+        } else {
+            this.queue.shift();
+            this.emit("queueChanged");
         }
     }
 }

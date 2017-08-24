@@ -58,6 +58,13 @@ module.controller("index", function ($scope, $http, socket) {
         });
     };
 
+    $scope.nextSong = function (response) {
+        $http.post("/next", {}, function () {
+            if (!response.data.result)
+                console.warn(response.data.message);
+        });
+    };
+
     // Event listeners
 
     socket.on("queueChanged", queue => $scope.playlist = queue);

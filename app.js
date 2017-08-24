@@ -52,7 +52,7 @@ app.post("/addSong", (req, res) => {
     if (req.body.url) {
         player.addSong(req.body.url, queue => {
             res.json({ result: true });
-            player.playing = true;
+            player.start();
         });
     } else
         res.json({ result: false, message: "No URL" });
@@ -60,7 +60,7 @@ app.post("/addSong", (req, res) => {
 
 app.post("/start", (req, res) => {
     if (!player.playing) {
-        player.playing = true;
+        player.start();
         res.json({ result: true });
     } else
         res.json({ result: false, message: "Already playing" });
@@ -68,7 +68,7 @@ app.post("/start", (req, res) => {
 
 app.post("/stop", (req, res) => {
     if (player.playing) {
-        player.playing = false
+        player.stop();
         res.json({ result: true });
     } else
         res.json({ result: false, message: "Currently not playing" });
@@ -76,10 +76,15 @@ app.post("/stop", (req, res) => {
 
 app.post("/pause", (req, res) => {
     if (player.playing) {
-        player.playing = false;
+        player.pause();
         res.json({ result: true });
     } else
         res.json({ result: false, message: "Currently not playing" });
+});
+
+app.post("/next", (req, res) => {
+    player.next();
+    res.json({ result: true });
 });
 
 app.post("/setVolume", (req, res) => {
@@ -93,13 +98,7 @@ app.post("/setVolume", (req, res) => {
 // Socket.IO events
 
 player.on("queueChanged", queue => io.emit("queueChanged", queue));
-
 player.on("songChanged", song => io.emit("songChanged", song));
 
-
-
-
-
 // Gogo
-
 http.listen(nconf.get("port"), () => console.log("Listening on port " + nconf.get("port")));
