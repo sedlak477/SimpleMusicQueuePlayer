@@ -122,7 +122,7 @@ class Player extends EventEmitter {
             console.log("Player resumed");
             this.emit("resume");
         } else if (this.queue.length > 0 && !this.playing) {
-            let song = this.queue.pop();
+            let song = this.queue.shift();
             this.emit("queueChanged", this.queue);
 
             this._streams.speaker = new Speaker();
