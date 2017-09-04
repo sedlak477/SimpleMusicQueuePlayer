@@ -1,8 +1,6 @@
 const ytdl = require("ytdl-core");
-const Speaker = require("speaker");
-const ffmpeg = require("fluent-ffmpeg");
 const { EventEmitter } = require("events");
-const lame = require("lame");
+const SpeakerPipeline = require("./speakerPipeline.js");
 
 class Player extends EventEmitter {
 
@@ -27,9 +25,16 @@ class Player extends EventEmitter {
         /**
          * Current play status of the player
          * @type {boolean}
-         * @private
+         * @readonly
          */
-        this._playing = false;
+        this.playing = false;
+
+        /**
+         * Current pause status
+         * @type {boolean}
+         * @readonly
+         */
+        this.paused = false;
 
         /**
          * The currently played song
@@ -38,27 +43,6 @@ class Player extends EventEmitter {
          */
         this._currentSong = null;
 
-        /**
-         * Current volume
-         * @type {number}
-         * @private
-         */
-        this._volume = 0.7;
-
-        /**
-         * Contains various streams for playnig audio
-         * @type {object}
-         * @private
-         */
-        this._streams = {}
-
-    }
-
-    /**
-     * Current play status
-     */
-    get playing() {
-        return this._playing;
     }
 
     /**
@@ -81,17 +65,14 @@ class Player extends EventEmitter {
      * Current volume
      */
     get volume() {
-        return this._volume;
+        return this._speakerPipeline ? this._speakerPipeline.volume : null;
     }
 
     /**
      * Current volume
      */
     set volume(value) {
-        this._volume = value;
-        if (this._streams.volume)
-            this._streams.volume.setVolume(value);
-        this.emit("volumeChanged", value);
+        this._speakerPipeline.volume = value;
     }
 
     /**
@@ -112,45 +93,36 @@ class Player extends EventEmitter {
 
     /**
      * Start the player
-     * @private
      */
     start() {
-        if (this._corked) {
-            this._streams.speaker.uncork();
-            this._corked = false;
-            this._playing = true;
+        if (this.paused) {
+            this._speakerPipeline.resume();
+            this.paused = false;
             console.log("Player resumed");
-            this.emit("resume");
-        } else if (this.queue.length > 0 && !this.playing) {
+        } else if (this.queue.length > 0) {
             let song = this.queue.shift();
             this.emit("queueChanged", this.queue);
 
-            this._streams.speaker = new Speaker();
-            // Start next song
-            this._streams.speaker.on("close", () => {
+            // Get youtube stream
+            this._ytdl = ytdl(song.url, { quality: "lowest" });
+
+            this._speakerPipeline = new SpeakerPipeline(this._ytdl);
+            this.on("volumeChanged", volume => this.emit("volumeChanged", volume));
+            this.emit("volumeChanged", this._speakerPipeline.volume);
+
+            this._speakerPipeline.once("close", () => {
                 if (this.playing) {
-                    console.log("Finished song: " + this.currentSong.name);
-                    this.emit("finished", this.currentSong);
-                    this.next();
+                    this.start();
                 }
             });
-            this._streams.speaker.on("error", console.error);
 
-            this._streams.lame = new lame.Decoder();
-            this._streams.lame.on("error", console.error);
-            this._streams.lame.pipe(this._streams.speaker);
-
-            // Get youtube stream; use ffmpeg to convert to wav format; pipe into speakers
-            this._streams.youtube = ytdl(song.url, { quality: "lowest" });
-
-            // -ar 44100 sets output sample rate to 44100 Hz to match Speaker sample rate
-            this._streams.ffmpeg = ffmpeg(this._streams.youtube).format("mp3").on("error", console.error).stream();
-            this._streams.ffmpeg.pipe(this._streams.lame);
-
-            this._playing = true;
+            this.playing = true;
             this.currentSong = song;
             console.log("Playing: " + song.name);
             this.emit("start", song);
+        } else if (this.playing) {
+            this.playing = false;
+            this.emit("stop");
         }
     }
 
@@ -158,37 +130,20 @@ class Player extends EventEmitter {
      * Pause the playback
      */
     pause() {
-        if (!this._corked) {
-            this._streams.speaker.cork();
-            this._corked = true;
-            this._playing = false;
-            console.log("Player paused");
-            this.emit("pause");
-        }
+        this._speakerPipeline.pause();
+        this.paused = true;
+        console.log("Player paused");
+        this.emit("pause");
     }
 
     /**
      * Stop playback
      */
     stop() {
-        if (this.playing) {
-            if (this._streams.youtube) {
-                this._streams.youtube.destroy();
-                this._streams.youtube = null;
-            }
-            if (this._streams.ffmpeg) {
-                this._streams.ffmpeg.destroy();
-                this._streams.ffmpeg = null;
-            }
-            if (this._streams.lame) {
-                this._streams.lame = null;
-            }
-            if (this._streams.speaker) {
-                this._streams.speaker.destroy();
-                this._streams.speaker = null;
-            }
-            this._playing = false;
-            this._corked = false;
+        if (this._ytdl) {
+            this.playing = false;
+            this._speakerPipeline.destroy();
+            this._ytdl.destroy();
             this.currentSong = null;
             this.emit("stop");
         }
@@ -199,12 +154,22 @@ class Player extends EventEmitter {
      */
     next() {
         if (this.playing) {
-            this.stop();
-            this.start();
+            this._speakerPipeline.destroy();
+            this._ytdl.destroy();
         } else {
             this.queue.shift();
             this.emit("queueChanged", this.queue);
         }
+    }
+
+    /**
+     * Get various information for debugging purposes
+     * @returns {Object}
+     */
+    getInfo() {
+        return {
+            ytdlBuffer: this._ytdl ? this._ytdl._readableState.buffer : null
+        };
     }
 
     /**

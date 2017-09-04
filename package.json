@@ -14,6 +14,7 @@
     "fluent-ffmpeg": "^2.1.2",
     "lame": "^1.2.4",
     "nconf": "^0.8.4",
+    "node-mpg123-util": "0.0.3",
     "socket.io": "^2.0.3",
     "speaker": "^0.3.0",
     "ytdl-core": "^0.15.2"

@@ -18,7 +18,7 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
-let player = new Player();
+var player = new Player();
 
 // Express routing
 
@@ -50,7 +50,7 @@ app.get("/currentSong", (req, res) => {
 
 app.post("/addSong", (req, res) => {
     if (req.body.url) {
-        player.addSong(req.body.url, queue => {
+        player.addSong(req.body.url, () => {
             res.json({ result: true });
             player.start();
         });
@@ -59,11 +59,8 @@ app.post("/addSong", (req, res) => {
 });
 
 app.post("/start", (req, res) => {
-    if (!player.playing) {
-        player.start();
-        res.json({ result: true });
-    } else
-        res.json({ result: false, message: "Already playing" });
+    player.start();
+    res.json({ result: true });
 });
 
 app.post("/stop", (req, res) => {
@@ -87,7 +84,11 @@ app.post("/next", (req, res) => {
     res.json({ result: true });
 });
 
-app.post("/setVolume", (req, res) => {
+app.get("/volume", (req, res) => {
+    res.json(player.volume);
+});
+
+app.post("/volume", (req, res) => {
     if (req.body.volume) {
         player.volume = req.body.volume;
         res.json({ result: true });
@@ -107,6 +108,10 @@ app.delete("/queue/:itemIndex", (req, res) => {
 
 player.on("queueChanged", queue => io.emit("queueChanged", queue));
 player.on("songChanged", song => io.emit("songChanged", song));
+player.on("volumeChanged", volume => io.emit("volumeChanged", volume));
 
 // Gogo
 http.listen(nconf.get("port"), () => console.log("Listening on port " + nconf.get("port")));
+
+// Debugging
+// setInterval(() => console.log(player.getInfo()), 3000);

@@ -65,6 +65,13 @@ module.controller("index", function ($scope, $http, socket) {
         });
     };
 
+    $scope.setVolume = function () {
+        $http.post("/volume", { volume: $scope.volume }, function (response) {
+            if (!response.data.result)
+                console.warn(response.data.message);
+        });
+    };
+
     $scope.removePlaylistEntry = function (index) {
         $http.delete("/queue/"+index).then(function (response) {
             if (!response.data.result)
@@ -76,6 +83,7 @@ module.controller("index", function ($scope, $http, socket) {
 
     socket.on("queueChanged", queue => $scope.playlist = queue);
     socket.on("songChanged", song => $scope.currentSong = song);
+    socket.on("volumeChanged", volume => $scope.volume = volume);
 
     // Get Data
 
@@ -85,5 +93,10 @@ module.controller("index", function ($scope, $http, socket) {
 
     $http.get("/currentSong").then(function (response) {
         $scope.currentSong = response.data;
+    });
+
+    
+    $http.get("/volume").then(function (response) {
+        $scope.volume = response.data;
     });
 });
