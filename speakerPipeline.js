@@ -13,6 +13,12 @@ class SpeakerPipeline extends EventEmitter {
     constructor(input) {
         super();
         /**
+         * True if the playback is paused
+         * @type {boolean}
+         */
+        this.paused = false;
+
+        /**
          * Input stream
          * @private
          * @type {ReadableStream}
@@ -26,7 +32,10 @@ class SpeakerPipeline extends EventEmitter {
         this._speaker = new Speaker();
 
         this._speaker.on("error", err => this.emit("error", err));
-        this._speaker.on("close", () => this.emit("close"));
+        this._speaker.on("close", () => {
+            this.emit("finish");
+            this.emit("close");
+        });
 
         /**
          * Lame decoder to decode MP3 into raw audio data
@@ -57,14 +66,31 @@ class SpeakerPipeline extends EventEmitter {
      * Pause playback
      */
     pause() {
-        this._speaker.cork();
+        if (!this.paused) {
+            this._speaker.cork();
+            this.paused = true;
+            this.emit("pause");
+        }
     }
 
     /**
      * Resume playback
      */
     resume() {
-        this._speaker.uncork();
+        if (this.paused) {
+            this._speaker.uncork();
+            this.paused = false;
+            this.emit("resume");
+        }
+    }
+
+    /**
+     * Stop playback and free resources
+     */
+    destroy() {
+        this._speaker.removeAllListeners("close");
+        this._speaker.destroy();
+        this.emit("close");
     }
 }
 

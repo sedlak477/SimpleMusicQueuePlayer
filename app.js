@@ -9,6 +9,8 @@ nconf.argv().env().file("./config.json").defaults({
     port: 3000
 });
 
+// Setup express
+
 let app = express();
 let http = require("http").createServer(app);
 let io = socketio(http);
@@ -18,9 +20,22 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 
-var player = new Player();
+// Init player
 
-// Express routing
+let player = new Player();
+
+// Player log output
+
+player.on("start", () => console.log("Player started"));
+player.on("stop", () => console.log("Player stopped"));
+player.on("pause", () => console.log("Player paused"));
+player.on("resume", () => console.log("Player resumed"));
+
+player.on("songChanged", song => console.log("Current song: " +  (song ? song.name : "null")));
+player.on("queueChanged", queue => console.log("Queue updated; length=" + queue.length));
+player.on("volumeChanged", volume => console.log("Volume changed to " + volume * 100 + "%"));
+
+// Application routes
 
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "www/index.html"));
@@ -64,19 +79,13 @@ app.post("/start", (req, res) => {
 });
 
 app.post("/stop", (req, res) => {
-    if (player.playing) {
-        player.stop();
-        res.json({ result: true });
-    } else
-        res.json({ result: false, message: "Currently not playing" });
+    player.stop();
+    res.json({ result: true });
 });
 
 app.post("/pause", (req, res) => {
-    if (player.playing) {
-        player.pause();
-        res.json({ result: true });
-    } else
-        res.json({ result: false, message: "Currently not playing" });
+    player.pause();
+    res.json({ result: true });
 });
 
 app.post("/next", (req, res) => {

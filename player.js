@@ -72,7 +72,17 @@ class Player extends EventEmitter {
      * Current volume
      */
     set volume(value) {
-        this._speakerPipeline.volume = value;
+        if (this._speakerPipeline)
+            this._speakerPipeline.volume = value;
+    }
+
+    _free() {
+        if (this._speakerPipeline)
+            this._speakerPipeline.destroy();
+        if (this._ytdl)
+            this._ytdl.destroy();
+        this._speakerPipeline = undefined;
+        this._ytdl = undefined;
     }
 
     /**
@@ -85,7 +95,6 @@ class Player extends EventEmitter {
             this.once("queueChanged", callback);
             ytdl.getInfo(url).then(info => {
                 this.queue.push({ name: info.title, url: url, pictureUrl: info.iurlmaxres, description: info.description });
-                console.log("Song '" + info.title + "' added to queue");
                 this.emit("queueChanged", this.queue);
             });
         }
@@ -95,35 +104,29 @@ class Player extends EventEmitter {
      * Start the player
      */
     start() {
-        if (this.paused) {
+        if (this._speakerPipeline)
             this._speakerPipeline.resume();
-            this.paused = false;
-            console.log("Player resumed");
-        } else if (this.queue.length > 0) {
+        else if (this.queue.length > 0) {
             let song = this.queue.shift();
             this.emit("queueChanged", this.queue);
 
-            // Get youtube stream
             this._ytdl = ytdl(song.url, { quality: "lowest" });
 
             this._speakerPipeline = new SpeakerPipeline(this._ytdl);
-            this.on("volumeChanged", volume => this.emit("volumeChanged", volume));
+            this._speakerPipeline.on("volumeChanged", volume => this.emit("volumeChanged", volume));
+            this._speakerPipeline.on("pause", () => this.emit("pause"));
+            this._speakerPipeline.on("resume", () => this.emit("resume"));
             this.emit("volumeChanged", this._speakerPipeline.volume);
 
-            this._speakerPipeline.once("close", () => {
-                if (this.playing) {
-                    this.start();
-                }
-            });
+            this._speakerPipeline.once("finish", () => this.next());
 
-            this.playing = true;
+            if (!this.playing) {
+                this.emit("start", song);
+                this.playing = true;
+            }
             this.currentSong = song;
-            console.log("Playing: " + song.name);
-            this.emit("start", song);
-        } else if (this.playing) {
-            this.playing = false;
-            this.emit("stop");
-        }
+        } else if (this.playing)
+            this.stop();
     }
 
     /**
@@ -131,20 +134,16 @@ class Player extends EventEmitter {
      */
     pause() {
         this._speakerPipeline.pause();
-        this.paused = true;
-        console.log("Player paused");
-        this.emit("pause");
     }
 
     /**
      * Stop playback
      */
     stop() {
-        if (this._ytdl) {
-            this.playing = false;
-            this._speakerPipeline.destroy();
-            this._ytdl.destroy();
+        if (this.playing) {
+            this._free();
             this.currentSong = null;
+            this.playing = false;
             this.emit("stop");
         }
     }
@@ -154,11 +153,11 @@ class Player extends EventEmitter {
      */
     next() {
         if (this.playing) {
-            this._speakerPipeline.destroy();
-            this._ytdl.destroy();
+            this._free();
+            this.start();
         } else {
-            this.queue.shift();
-            this.emit("queueChanged", this.queue);
+            if (this.queue.shift())
+                this.emit("queueChanged", this.queue);
         }
     }
 
