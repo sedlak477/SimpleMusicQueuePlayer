@@ -1,6 +1,6 @@
 # SimpleMusicQueuePlayer
 
-SimSimpleMusicQueuePlayer is a Node.js application for streaming YouTube videos to your speakers.
+SimpleMusicQueuePlayer is a Node.js application for streaming YouTube videos to your speakers.
 
 ## Usage
 It is intended to be used on a Raspberry Pi as a simple music player. It has a basic web interface listening on default port `3000`.
